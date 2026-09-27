@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Habilita el modo oscuro por clase (.dark en <html>), en vez de por preferencia del sistema */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #10B981;
+  --color-primary-dark: #059669;
+  --color-dark-bg: #0F172A;
+  --color-dark-card: #1E293B;
+}
 
 body {
   margin: 0;

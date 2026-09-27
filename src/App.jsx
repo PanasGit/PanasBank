@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import Layout from './components/layout/Layout';
 
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -17,13 +18,30 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/bizum" element={<ProtectedRoute><Bizum /></ProtectedRoute>} />
-          <Route path="/apuestas" element={<ProtectedRoute><Bets /></ProtectedRoute>} />
-          <Route path="/contactos" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
-          <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
-          <Route path="/ajustes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Home />} />
+            <Route path="/bizum" element={<Bizum />} />
+            <Route path="/apuestas" element={<Bets />} />
+            <Route path="/contactos" element={<Contacts />} />
+            <Route path="/prestamos" element={<Loans />} />
+            <Route path="/ajustes" element={<Settings />} />
+          </Route>
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute adminOnly>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
