@@ -1,16 +1,60 @@
 @import "tailwindcss";
 
-/* Habilita el modo oscuro por clase (.dark en <html>), en vez de por preferencia del sistema */
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-primary: #10B981;
-  --color-primary-dark: #059669;
-  --color-dark-bg: #0F172A;
-  --color-dark-card: #1E293B;
+/* ---------- Tema claro ---------- */
+:root {
+  --app: #F3F3F6;
+  --surface: #FFFFFF;
+  --surface-2: #EDEDF1;
+  --line: #E1E1E8;
+  --ink: #0B0B0E;
+  --muted: #6E6E7A;
+  --accent: #6D4AFF;
+  --accent-hover: #5B39E8;
+  --accent-ink: #FFFFFF;
+  --positive: #16A34A;
+  --negative: #E11D48;
+}
+
+/* ---------- Tema oscuro (por defecto) ---------- */
+.dark {
+  color-scheme: dark;
+  --app: #050507;
+  --surface: #0F0F13;
+  --surface-2: #17171C;
+  --line: #24242B;
+  --ink: #F4F4F7;
+  --muted: #8B8B97;
+  --accent: #8B6DFF;
+  --accent-hover: #A08AFF;
+  --accent-ink: #0B0B0E;
+  --positive: #34D399;
+  --negative: #FB7185;
+}
+
+/* Expone los tokens como utilidades de Tailwind (bg-app, text-ink, etc.) */
+@theme inline {
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--app);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
