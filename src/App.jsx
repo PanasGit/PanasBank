@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import Layout from './components/layout/Layout';
 
+import { ThemeProvider } from './context/ThemeContext';
+
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Bizum from './pages/Bizum';
@@ -15,35 +17,38 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/" element={<Home />} />
-            <Route path="/bizum" element={<Bizum />} />
-            <Route path="/apuestas" element={<Bets />} />
-            <Route path="/contactos" element={<Contacts />} />
-            <Route path="/prestamos" element={<Loans />} />
-            <Route path="/ajustes" element={<Settings />} />
-          </Route>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Home />} />
+              <Route path="/bizum" element={<Bizum />} />
+              <Route path="/apuestas" element={<Bets />} />
+              <Route path="/contactos" element={<Contacts />} />
+              <Route path="/prestamos" element={<Loans />} />
+              <Route path="/ajustes" element={<Settings />} />
+            </Route>
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute adminOnly>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+      
     </AuthProvider>
   );
 }

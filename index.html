@@ -11,6 +11,15 @@
       rel="stylesheet"
     />
     <title>PanasBank</title>
+
+    <script>
+      try {
+        if (localStorage.getItem('panasbank-theme') === 'light') {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    </script>
+    
   </head>
   <body>
     <div id="root"></div>

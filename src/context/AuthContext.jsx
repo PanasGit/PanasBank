@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
     profile,
     isAdmin: profile?.role === 'admin',
     loading,
-    signOut: () => supabase.auth.signOut(),
+    signOut: () => supabase.auth.signOut({ scope: 'local' }),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
