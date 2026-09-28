@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Ban, Loader2, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Clock, Ban, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import useLoans from '../hooks/useLoans';
 import { formatCurrency, formatRemaining, formatDate, formatDateTime } from '../utils/format';
+
+const round2 = (n) => Math.round(n * 100) / 100;
+const pendingOf = (loan) => round2(Number(loan.amount_due) - Number(loan.amount_paid));
 
 function useNow(intervalMs = 30000) {
   const [now, setNow] = useState(() => Date.now());
@@ -12,12 +15,6 @@ function useNow(intervalMs = 30000) {
   }, [intervalMs]);
   return now;
 }
-
-const STATUS = {
-  active: { label: 'Activo', cls: 'bg-accent/15 text-accent', icon: Clock },
-  paid: { label: 'Devuelto', cls: 'bg-positive/15 text-positive', icon: CheckCircle2 },
-  defaulted: { label: 'Impagado', cls: 'bg-negative/15 text-negative', icon: XCircle },
-};
 
 function Stat({ label, value }) {
   return (
@@ -92,28 +89,81 @@ function ActiveLoanCard({ loan, now, balance, busy, onRepay }) {
   );
 }
 
+function DebtCard({ loan, balance, busy, onPay }) {
+  const due = Number(loan.amount_due);
+  const paid = Number(loan.amount_paid);
+  const pending = pendingOf(loan);
+  const pct = due > 0 ? Math.min(100, (paid / due) * 100) : 0;
+  const canPay = balance >= pending;
+
+  return (
+    <div className="rounded-3xl border border-negative/40 bg-surface p-5">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs text-muted">Deuda pendiente</p>
+          <p className="font-display text-2xl font-semibold tracking-tight text-negative">
+            {formatCurrency(pending)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted">Préstamo original</p>
+          <p className="text-sm font-medium">{formatCurrency(due)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        Pagado {formatCurrency(paid)} de {formatCurrency(due)} · venció el {formatDate(loan.due_date)}
+      </p>
+
+      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-surface-2 p-3 text-xs text-muted">
+        <AlertTriangle size={15} className="mt-px shrink-0 text-negative" />
+        Se descuenta automáticamente de cada ingreso que recibas (Bizums, ingresos, premios...)
+        hasta cubrirla.
+      </p>
+
+      <button
+        disabled={!canPay || busy}
+        onClick={() => onPay(loan)}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover disabled:opacity-50"
+      >
+        Pagar deuda ahora
+      </button>
+      {!canPay && (
+        <p className="mt-2 text-center text-xs text-muted">
+          Te faltan {formatCurrency(pending - balance)} para poder saldarla de golpe.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function HistoryRow({ loan }) {
-  const s = STATUS[loan.status];
-  const Icon = s.icon;
+  const late = loan.repaid_at && new Date(loan.repaid_at) > new Date(loan.due_date);
   return (
     <li className="flex items-center gap-3 px-4 py-3.5">
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${s.cls}`}>
-        <Icon size={18} />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-positive/15 text-positive">
+        <CheckCircle2 size={18} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">Préstamo de {formatCurrency(loan.amount)}</p>
         <p className="text-xs text-muted">
           {formatDate(loan.created_at)} · {formatCurrency(loan.amount_due)}
+          {late ? ' · con retraso' : ''}
         </p>
       </div>
-      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.cls}`}>{s.label}</span>
+      <span className="rounded-full bg-positive/15 px-2.5 py-1 text-[11px] font-semibold text-positive">
+        Devuelto
+      </span>
     </li>
   );
 }
 
 export default function Loans() {
   const {
-    active, history, balance, blockedUntil, settings,
+    active, debts, history, totalDebt, balance, blockedUntil, settings,
     loading, error, reload, requestLoan, repayLoan,
   } = useLoans();
   const now = useNow();
@@ -143,20 +193,27 @@ export default function Loans() {
   const closeRequest = useCallback(() => setRequestOpen(false), []);
   const closeRepay = useCallback(() => setRepayTarget(null), []);
 
+  const hasDebt = totalDebt > 0;
   const blocked = blockedUntil && new Date(blockedUntil).getTime() > now;
   const unavailable = settings && (settings.amount <= 0 || settings.durationDays <= 0);
   const maxReached = settings && active.length >= settings.maxActive;
-  const canRequest = !!settings && !blocked && !unavailable && !maxReached;
+  const canRequest = !!settings && !hasDebt && !blocked && !unavailable && !maxReached;
 
-  let reason = '';
-  if (blocked) reason = `Solicitudes bloqueadas por impago hasta el ${formatDateTime(blockedUntil)}.`;
-  else if (unavailable) reason = 'Los préstamos no están disponibles ahora mismo.';
+  const reasons = [];
+  if (hasDebt)
+    reasons.push(`Tienes una deuda pendiente de ${formatCurrency(totalDebt)}. Sáldala para poder pedir otro préstamo.`);
+  if (blocked)
+    reasons.push(`Solicitudes bloqueadas por impago hasta el ${formatDateTime(blockedUntil)}.`);
+  if (unavailable) reasons.push('Los préstamos no están disponibles ahora mismo.');
   else if (maxReached)
-    reason = `Has alcanzado el máximo de préstamos activos (${settings.maxActive}). Devuelve alguno para pedir otro.`;
+    reasons.push(`Has alcanzado el máximo de préstamos activos (${settings.maxActive}). Devuelve alguno para pedir otro.`);
 
   const dueAmount = settings
     ? Math.round(settings.amount * (1 + settings.interest / 100) * 100) / 100
     : 0;
+
+  const repayAmount = repayTarget ? pendingOf(repayTarget) : 0;
+  const repayIsDebt = repayTarget?.status === 'defaulted';
 
   function openRequest() {
     setRequestError('');
@@ -190,9 +247,9 @@ export default function Loans() {
       setRepayError(res.message);
       return;
     }
-    const paid = repayTarget.amount_due;
+    const paid = repayAmount;
     setRepayTarget(null);
-    setNotice(`Préstamo devuelto (${formatCurrency(paid)})`);
+    setNotice(`${repayIsDebt ? 'Deuda saldada' : 'Préstamo devuelto'} (${formatCurrency(paid)})`);
   }
 
   return (
@@ -242,11 +299,15 @@ export default function Loans() {
                 <Stat label="Plazo" value={`${settings.durationDays} días`} />
               </div>
 
-              {reason && (
-                <p className="mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 p-3 text-xs text-muted">
-                  <Ban size={15} className="mt-px shrink-0" />
-                  {reason}
-                </p>
+              {reasons.length > 0 && (
+                <div className="mt-4 space-y-2 rounded-2xl bg-surface-2 p-3 text-xs text-muted">
+                  {reasons.map((r) => (
+                    <p key={r} className="flex items-start gap-2">
+                      <Ban size={15} className="mt-px shrink-0" />
+                      {r}
+                    </p>
+                  ))}
+                </div>
               )}
 
               <button
@@ -258,6 +319,24 @@ export default function Loans() {
               </button>
             </div>
           </section>
+
+          {/* Deudas pendientes */}
+          {debts.length > 0 && (
+            <section>
+              <h2 className="mb-3 font-display text-base font-semibold">Deuda pendiente</h2>
+              <div className="space-y-3">
+                {debts.map((l) => (
+                  <DebtCard
+                    key={l.id}
+                    loan={l}
+                    balance={balance}
+                    busy={repaying && repayTarget?.id === l.id}
+                    onPay={openRepay}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Activos */}
           {active.length > 0 && (
@@ -314,7 +393,8 @@ export default function Loans() {
               <AlertTriangle size={16} className="mt-px shrink-0 text-negative" />
               <p>
                 Al vencer el plazo se descontará de tu saldo automáticamente. Si no tienes saldo
-                suficiente, no podrás pedir más préstamos durante {settings.penaltyDays} días.
+                suficiente, la deuda seguirá viva y se descontará de tus próximos ingresos, y no
+                podrás pedir más préstamos durante {settings.penaltyDays} días.
               </p>
             </div>
 
@@ -331,17 +411,18 @@ export default function Loans() {
         )}
       </Modal>
 
-      {/* Modal: devolver */}
-      <Modal open={!!repayTarget} onClose={closeRepay} title="Devolver préstamo">
+      {/* Modal: devolver / pagar deuda */}
+      <Modal
+        open={!!repayTarget}
+        onClose={closeRepay}
+        title={repayIsDebt ? 'Pagar deuda' : 'Devolver préstamo'}
+      >
         {repayTarget && (
           <div>
             <div className="divide-y divide-line">
-              <SummaryRow label="Importe a devolver" value={formatCurrency(repayTarget.amount_due)} strong />
+              <SummaryRow label="Importe a pagar" value={formatCurrency(repayAmount)} strong />
               <SummaryRow label="Saldo actual" value={formatCurrency(balance)} />
-              <SummaryRow
-                label="Saldo tras devolverlo"
-                value={formatCurrency(balance - Number(repayTarget.amount_due))}
-              />
+              <SummaryRow label="Saldo tras pagarlo" value={formatCurrency(balance - repayAmount)} />
             </div>
 
             {repayError && <p className="mt-3 text-sm text-negative">{repayError}</p>}
@@ -351,7 +432,7 @@ export default function Loans() {
               disabled={repaying}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3 font-semibold text-accent-ink transition hover:bg-accent-hover disabled:opacity-60"
             >
-              {repaying ? <Loader2 size={18} className="animate-spin" /> : 'Confirmar devolución'}
+              {repaying ? <Loader2 size={18} className="animate-spin" /> : 'Confirmar pago'}
             </button>
           </div>
         )}

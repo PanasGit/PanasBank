@@ -24,13 +24,13 @@ export default function useLoans() {
   const load = useCallback(async () => {
     if (!userId) return;
 
-    // Aplica primero los vencimientos pendientes (cobro o penalización)
+    // Aplica primero los vencimientos pendientes (cobro o paso a deuda)
     await supabase.rpc('process_my_overdue_loans');
 
     const [loansRes, accRes, profRes, setRes] = await Promise.all([
       supabase
         .from('loans')
-        .select('id, amount, interest_rate, amount_due, due_date, status, created_at, repaid_at')
+        .select('id, amount, interest_rate, amount_due, amount_paid, due_date, status, created_at, repaid_at')
         .eq('user_id', userId) // el admin ve todos por RLS, así que filtramos a mano
         .order('created_at', { ascending: false }),
       supabase.from('accounts').select('balance').eq('user_id', userId).single(),
@@ -64,7 +64,7 @@ export default function useLoans() {
     load();
   }, [load]);
 
-  // Tiempo real: si un préstamo cambia (p. ej. lo procesa el cron), recargamos
+  // Tiempo real: si un préstamo cambia (vencimiento, cobro de deuda...), recargamos
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
@@ -77,7 +77,15 @@ export default function useLoans() {
   }, [userId, load]);
 
   const active = useMemo(() => loans.filter((l) => l.status === 'active'), [loans]);
-  const history = useMemo(() => loans.filter((l) => l.status !== 'active'), [loans]);
+  const debts = useMemo(() => loans.filter((l) => l.status === 'defaulted'), [loans]);
+  const history = useMemo(() => loans.filter((l) => l.status === 'paid'), [loans]);
+  const totalDebt = useMemo(
+    () =>
+      Math.round(
+        debts.reduce((sum, l) => sum + (Number(l.amount_due) - Number(l.amount_paid)), 0) * 100
+      ) / 100,
+    [debts]
+  );
 
   const requestLoan = async () => {
     const { error } = await supabase.rpc('request_loan');
@@ -94,7 +102,7 @@ export default function useLoans() {
   };
 
   return {
-    active, history, balance, blockedUntil, settings,
+    active, debts, history, totalDebt, balance, blockedUntil, settings,
     loading, error, reload: load, requestLoan, repayLoan,
   };
 }
