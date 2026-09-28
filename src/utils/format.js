@@ -31,3 +31,35 @@ export function getInitials(name = '') {
   if (!parts.length) return '?';
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
 }
+
+
+
+export function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+export function formatDateTime(iso) {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+// "3 d 4 h" · "5 h 12 min" · "12 min" · "Vencido"
+export function formatRemaining(iso, now = Date.now()) {
+  const ms = new Date(iso).getTime() - now;
+  if (ms <= 0) return 'Vencido';
+  const totalMin = Math.floor(ms / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  if (d > 0) return `${d} d ${h} h`;
+  if (h > 0) return `${h} h ${m} min`;
+  return `${Math.max(m, 1)} min`;
+}
