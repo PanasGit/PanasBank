@@ -12,7 +12,12 @@ import Bets from './pages/Bets';
 import Contacts from './pages/Contacts';
 import Loans from './pages/Loans';
 import Settings from './pages/Settings';
+
+import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminLoans from './pages/admin/AdminLoans';
+import AdminPredictions from './pages/admin/AdminPredictions';
 
 export default function App() {
   return (
@@ -41,10 +46,15 @@ export default function App() {
               path="/admin"
               element={
                 <ProtectedRoute adminOnly>
-                  <AdminDashboard />
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="usuarios" element={<AdminUsers />} />
+              <Route path="prestamos" element={<AdminLoans />} />
+              <Route path="predicciones" element={<AdminPredictions />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
