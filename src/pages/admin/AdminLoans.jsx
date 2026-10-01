@@ -9,6 +9,8 @@ const FIELDS = [
   { key: 'loan_penalty_days', label: 'Días de bloqueo por impago', step: '1' },
   { key: 'loan_max_active', label: 'Préstamos activos máximos por usuario', step: '1' },
   { key: 'bet_min_amount', label: 'Bote mínimo para crear una apuesta (€)', step: '0.01' },
+  { key: 'income_amount', label: 'Ingreso automático (€)', step: '0.01' },
+  { key: 'income_interval_days', label: 'Cada cuántos días se ingresa', step: '1' },
 ];
 
 export default function AdminLoans() {
