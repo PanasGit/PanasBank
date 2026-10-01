@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import useHomeData from '../hooks/useHomeData';
 import { formatCurrency, formatSigned, formatMovementDate, getInitials } from '../utils/format';
 
+import NotificationsBell from '../components/ui/NotificationsBell';
+
 const CATEGORY = {
   ingreso_manual: { label: 'Ingreso', icon: Wallet },
   bizum: { label: 'Bizum', icon: ArrowLeftRight },
@@ -89,18 +91,21 @@ export default function Home() {
           </div>
         </Link>
 
-        <Link
-          to="/contactos"
-          aria-label="Contactos"
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface transition hover:bg-surface-2"
-        >
-          <Users size={20} />
-          {pendingRequests > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-ink">
-              {pendingRequests > 9 ? '9+' : pendingRequests}
-            </span>
-          )}
-        </Link>
+        <div className="flex items-center gap-2">
+          <NotificationsBell />
+          <Link
+            to="/contactos"
+            aria-label="Contactos"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface transition hover:bg-surface-2"
+          >
+            <Users size={20} />
+            {pendingRequests > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-ink">
+                {pendingRequests > 9 ? '9+' : pendingRequests}
+              </span>
+            )}
+          </Link>
+        </div>
       </header>
 
       {loading && <HomeSkeleton />}

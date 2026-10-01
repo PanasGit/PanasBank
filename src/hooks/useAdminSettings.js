@@ -4,6 +4,7 @@ import supabase from '../supabaseClient';
 const KEYS = [
   'loan_default_amount', 'loan_default_interest', 'loan_duration_days',
   'loan_penalty_days', 'loan_max_active', 'bet_min_amount',
+  'income_amount', 'income_interval_days',
 ];
 
 export default function useAdminSettings() {
