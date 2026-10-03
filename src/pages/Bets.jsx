@@ -160,7 +160,7 @@ function BetCard({ bet, totals, myEntry, now, userId, isAdmin, onEnter, onSettle
   const ended = new Date(bet.ends_at).getTime() <= now;
   const isCreator = bet.created_by === userId;
   const canManage = isCreator || isAdmin;
-  const canEnter = !myEntry && !ended && !isCreator;
+  const canEnter = !myEntry && !ended;
   const winningOption = bet.bet_options.find((o) => o.id === bet.winning_option_id);
 
   return (

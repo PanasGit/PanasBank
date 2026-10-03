@@ -23,7 +23,7 @@ export default function useBets() {
         .select(`
           id, title, base_amount, min_amount, status, winning_option_id, ends_at, created_at, created_by,
           creator:profiles!created_by (id, full_name, avatar_color),
-          bet_options (id, label)
+          bet_options!bet_options_bet_id_fkey (id, label)
         `)
         .order('created_at', { ascending: false }),
       supabase.rpc('my_visible_bet_totals'),
