@@ -5,6 +5,8 @@ import Layout from './components/layout/Layout';
 
 import { ThemeProvider } from './context/ThemeContext';
 
+import OfflineBanner from './components/OfflineBanner';
+
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Bizum from './pages/Bizum';
@@ -23,6 +25,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+        <OfflineBanner />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
